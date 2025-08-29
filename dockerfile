@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-# Install runtime dependencies only (no build tools needed)
+# Install runtime dependencies including Bluetooth tools
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     pulseaudio-utils \
@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y \
     libxss1 \
     libxtst6 \
     libprojectm3 \
+    bluetooth \
+    bluez \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
