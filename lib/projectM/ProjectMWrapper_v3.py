@@ -90,15 +90,34 @@ class ProjectMWrapperV3:
             init_func.restype = ctypes.c_int
             init_func.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
             
-            # Call the initialization function
+            # Call the initialization function with error handling
             logging.info("Calling projectM initialization...")
-            result = init_func(width, height, mesh_x, mesh_y, fps, texture_size)
-            logging.info(f"projectM initialization result: {result}")
+            
+            # Try different parameter combinations
+            try:
+                # First try: standard parameters
+                result = init_func(width, height, mesh_x, mesh_y, fps, texture_size)
+                logging.info(f"projectM initialization result: {result}")
+            except Exception as e:
+                logging.warning(f"First initialization attempt failed: {e}")
+                try:
+                    # Second try: simpler parameters
+                    result = init_func(640, 480, 32, 24, 30, 256)
+                    logging.info(f"projectM initialization with simple params result: {result}")
+                except Exception as e2:
+                    logging.warning(f"Second initialization attempt failed: {e2}")
+                    try:
+                        # Third try: minimal parameters
+                        result = init_func(320, 240, 16, 12, 15, 128)
+                        logging.info(f"projectM initialization with minimal params result: {result}")
+                    except Exception as e3:
+                        logging.error(f"All initialization attempts failed: {e3}")
+                        logging.info("Continuing without projectM initialization")
+                        return
                 
         except Exception as e:
             logging.error(f"Failed to initialize projectM: {e}")
             logging.info("Continuing without projectM initialization")
-            # Don't raise - let the application continue
     
     def render_frame(self):
         """Render a single frame"""
