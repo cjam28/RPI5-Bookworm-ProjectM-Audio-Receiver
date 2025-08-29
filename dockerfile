@@ -37,8 +37,9 @@ COPY . .
 # Make projectMAR.py executable
 RUN chmod +x projectMAR.py
 
-# Ensure configuration directory exists and is accessible
+# Ensure configuration directory exists and copy config file
 RUN mkdir -p /app/conf && chmod 755 /app/conf
+COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
