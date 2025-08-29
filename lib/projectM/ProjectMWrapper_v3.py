@@ -3,6 +3,8 @@
 
 import ctypes
 import logging
+import time
+import os
 
 class ProjectMWrapperV3:
     """Compatibility wrapper for projectM version 3.1.12"""
@@ -10,6 +12,12 @@ class ProjectMWrapperV3:
     def __init__(self, config, sdl_rendering):
         self.config = config
         self.sdl_rendering = sdl_rendering
+        
+        # Initialize state variables
+        self._current_preset = None
+        self._current_preset_start = None
+        self._preset_locked = False
+        self._preset_shuffle = False
         
         # Load the projectM library
         try:
@@ -50,6 +58,14 @@ class ProjectMWrapperV3:
             # Get mesh size function
             self.projectm_lib.getMeshSize.restype = None
             self.projectm_lib.getMeshSize.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
+            
+            # Audio processing function (if available)
+            try:
+                self.projectm_lib.addPCMFloat.restype = None
+                self.projectm_lib.addPCMFloat.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+                logging.info("Audio processing function available")
+            except:
+                logging.warning("Audio processing function not available")
             
             logging.info("Successfully set up projectM v3.1.12 function signatures")
             
@@ -99,3 +115,62 @@ class ProjectMWrapperV3:
         except Exception as e:
             logging.error(f"Failed to reset projectM: {e}")
             raise
+    
+    def add_pcm(self, data, channels=2):
+        """Add PCM audio data for visualization"""
+        try:
+            if hasattr(self.projectm_lib, 'addPCMFloat'):
+                # Convert data to float array
+                float_data = (ctypes.c_float * len(data))(*data)
+                self.projectm_lib.addPCMFloat(float_data, len(data))
+        except Exception as e:
+            logging.debug(f"Audio processing not available: {e}")
+    
+    def set_window_size(self, width, height):
+        """Set window size (stub for compatibility)"""
+        logging.debug(f"Window size set to {width}x{height}")
+    
+    def display_initial_preset(self):
+        """Display initial preset (stub for compatibility)"""
+        logging.info("Displaying initial preset")
+        self._current_preset_start = time.time()
+    
+    def next_preset(self):
+        """Go to next preset (stub for compatibility)"""
+        logging.info("Next preset requested")
+        self._current_preset_start = time.time()
+    
+    def previous_preset(self):
+        """Go to previous preset (stub for compatibility)"""
+        logging.info("Previous preset requested")
+        self._current_preset_start = time.time()
+    
+    def get_preset_locked(self):
+        """Get preset lock status"""
+        return self._preset_locked
+    
+    def lock_preset(self, locked):
+        """Lock/unlock preset"""
+        self._preset_locked = locked
+        logging.info(f"Preset lock set to: {locked}")
+    
+    def get_preset_shuffle(self):
+        """Get shuffle status"""
+        return self._preset_shuffle
+    
+    def shuffle_playlist(self, shuffle):
+        """Set shuffle status"""
+        self._preset_shuffle = shuffle
+        logging.info(f"Shuffle set to: {shuffle}")
+    
+    def delete_preset(self, physical=False):
+        """Delete preset (stub for compatibility)"""
+        logging.info("Delete preset requested")
+    
+    def change_beat_sensitivity(self, delta):
+        """Change beat sensitivity (stub for compatibility)"""
+        logging.debug(f"Beat sensitivity change: {delta}")
+    
+    def uninitialize(self):
+        """Cleanup projectM"""
+        logging.info("Uninitializing projectM")
