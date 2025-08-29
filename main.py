@@ -13,8 +13,6 @@ from pathlib import Path
 lib_path = Path(__file__).parent / "lib"
 sys.path.insert(0, str(lib_path))
 
-from controllers.main_controller import MainController
-
 def main():
     """Main application entry point"""
     try:
@@ -24,7 +22,8 @@ def main():
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         
-        # Create and run main controller
+        # Import and run the main application
+        from controllers.main_controller import MainController
         controller = MainController()
         controller.run()
         
