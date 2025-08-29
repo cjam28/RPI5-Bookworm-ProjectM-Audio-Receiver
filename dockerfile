@@ -30,6 +30,12 @@ COPY . .
 # Make projectMAR.py executable
 RUN chmod +x projectMAR.py
 
+# Ensure configuration directory exists and is accessible
+RUN mkdir -p /app/conf && chmod 755 /app/conf
+
+# Create a symlink to ensure the lib directory can find the conf directory
+RUN ln -sf /app/conf /app/lib/conf
+
 # Expose ports for web interface (if any)
 EXPOSE 8080
 
