@@ -44,14 +44,35 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
 
-# Create entrypoint script
+# Create entrypoint script with comprehensive library setup
 RUN echo '#!/bin/bash\n\
-# Create symlink for projectM library compatibility\n\
+# Create symlinks for projectM library compatibility\n\
 mkdir -p /usr/local/lib\n\
-ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4.so\n\
-echo "Created symlink: /usr/local/lib/libprojectM-4.so -> /usr/lib/aarch64-linux-gnu/libprojectM.so"\n\
+echo "Setting up projectM library symlinks..."\n\
+\n\
+# Main projectM library\n\
+if [ -f "/usr/lib/aarch64-linux-gnu/libprojectM.so" ]; then\n\
+    ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4.so\n\
+    echo "✓ Created symlink: libprojectM-4.so"\n\
+else\n\
+    echo "✗ Warning: /usr/lib/aarch64-linux-gnu/libprojectM.so not found"\n\
+fi\n\
+\n\
+# Playlist library (create empty if not exists)\n\
+if [ -f "/usr/lib/aarch64-linux-gnu/libprojectM.so" ]; then\n\
+    ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4-playlist.so\n\
+    echo "✓ Created symlink: libprojectM-4-playlist.so"\n\
+else\n\
+    echo "✗ Warning: Creating empty playlist library"\n\
+    touch /usr/local/lib/libprojectM-4-playlist.so\n\
+fi\n\
+\n\
+# Show what we created\n\
+echo "Library setup complete:"\n\
 ls -la /usr/local/lib/libprojectM*\n\
+\n\
 # Start the application\n\
+echo "Starting projectM application..."\n\
 exec ./venv/bin/python projectMAR.py' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose ports for web interface (if any)
