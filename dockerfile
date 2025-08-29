@@ -1,45 +1,15 @@
-# Stage 1: Build projectM
-FROM debian:bookworm-slim AS builder
+# Use existing projectM base image
+FROM ghcr.io/projectm-visualizer/projectm:latest
 
-# Install build dependencies
+# Install Python and other dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    cmake \
-    build-essential \
-    pkg-config \
-    libglm-dev \
-    libgl1-mesa-dev \
-    libegl1-mesa-dev \
-    libfreetype6-dev \
-    libfontconfig1-dev \
-    libglfw3-dev \
-    libglew-dev \
-    libassimp-dev \
-    libboost-all-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Build projectM
-WORKDIR /tmp
-RUN git clone --depth 1 https://github.com/projectM-visualizer/projectM.git && \
-    cd projectM && \
-    mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_NATIVE_GL=ON && \
-    make -j$(nproc) && \
-    make install
-
-# Stage 2: Runtime container
-FROM python:3.11-slim-bookworm
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
     pulseaudio \
     pulseaudio-utils \
     libasound2-dev \
     libpulse-dev \
-    python3-pip \
-    python3-venv \
-    libgl1-mesa-glx \
-    libglu1-mesa \
     libsdl2-2.0-0 \
     libsdl2-dev \
     libx11-6 \
@@ -49,11 +19,6 @@ RUN apt-get update && apt-get install -y \
     libxss1 \
     libxtst6 \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy projectM libraries from builder stage
-COPY --from=builder /usr/local/lib/libprojectM* /usr/local/lib/
-COPY --from=builder /usr/local/include/projectM /usr/local/include/
-RUN ldconfig
 
 # Set working directory
 WORKDIR /app
