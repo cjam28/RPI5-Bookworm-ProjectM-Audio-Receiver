@@ -19,6 +19,7 @@ services:
     volumes:
       - /run/user/1000/pulse:/run/user/1000/pulse:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /boot:/boot:ro  # Add this line to mount the boot directory
     network_mode: host
     labels:
       - "traefik.enable=false"
