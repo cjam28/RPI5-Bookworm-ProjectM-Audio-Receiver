@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-# Install runtime dependencies including Bluetooth tools
+# Install runtime dependencies including OpenGL development
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     pulseaudio-utils \
@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     libgl1-mesa-glx \
     libglu1-mesa \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
     libsdl2-2.0-0 \
     libsdl2-dev \
     libx11-6 \
