@@ -12,6 +12,12 @@ RUN apt-get update && apt-get install -y \
     libglu1-mesa \
     libsdl2-2.0-0 \
     libsdl2-dev \
+    libx11-6 \
+    libxext6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -22,6 +28,7 @@ COPY requirements.txt .
 
 # Create virtual environment and install dependencies
 RUN python3 -m venv venv
+RUN . venv/bin/activate && pip install --upgrade pip
 RUN . venv/bin/activate && pip install -r requirements.txt
 
 # Copy the application code
