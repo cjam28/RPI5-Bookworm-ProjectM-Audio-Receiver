@@ -9,7 +9,7 @@ import time
 from OpenGL import GL
 
 from lib.common import get_environment
-from lib.projectM.ProjectMWrapper import ProjectMWrapper
+from lib.projectM.ProjectMWrapper_v3 import ProjectMWrapperV3  # CHANGED THIS LINE
 from lib.projectM.SDLRendering import SDLRendering
 from lib.projectM.AudioCapture import AudioCapture
 
@@ -44,7 +44,7 @@ class RenderingLoop:
         self.thread_event   = thread_event
         
         self.sdl_rendering      = SDLRendering(self.config)
-        self.projectm_wrapper   = ProjectMWrapper(self.config, self.sdl_rendering)
+        self.projectm_wrapper   = ProjectMWrapperV3(self.config, self.sdl_rendering)  # CHANGED THIS LINE
         self.audio_capture      = AudioCapture(self.config, self.projectm_wrapper)
 
         self._renderWidth = None
@@ -199,6 +199,7 @@ class RenderingLoop:
                         break
 
                     if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED or event.window.event == sdl2.SDL_WINDOWEVENT_SIZE_CHANGED:
+
                         w, h = ctypes.c_int(), ctypes.c_int()
                         sdl2.SDL_GetWindowSize(self.sdl_rendering.rendering_window, ctypes.byref(w), ctypes.byref(h))
                         width, height = w.value, h.value
@@ -206,6 +207,7 @@ class RenderingLoop:
                         self.projectm_wrapper.set_window_size(width, height)
 
                     if event.window.event == sdl2.SDL_WINDOWEVENT_HIDDEN or event.window.event == sdl2.SDL_WINDOWEVENT_MINIMIZED:
+
                         log.debug('Restoring the window!')
                         sdl2.SDL_RestoreWindow(self.sdl_rendering.rendering_window)
                         sdl2.SDL_ShowWindow(self.sdl_rendering.rendering_window)
