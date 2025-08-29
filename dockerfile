@@ -44,12 +44,18 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
 
-# Create symlink for projectM library compatibility
-RUN mkdir -p /usr/local/lib && \
-    ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4.so
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+# Create symlink for projectM library compatibility\n\
+mkdir -p /usr/local/lib\n\
+ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4.so\n\
+echo "Created symlink: /usr/local/lib/libprojectM-4.so -> /usr/lib/aarch64-linux-gnu/libprojectM.so"\n\
+ls -la /usr/local/lib/libprojectM*\n\
+# Start the application\n\
+exec ./venv/bin/python projectMAR.py' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Expose ports for web interface (if any)
 EXPOSE 8080
 
-# Set the command to run the application with the correct entry point
-CMD ["./venv/bin/python", "projectMAR.py"]
+# Set the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
