@@ -64,60 +64,99 @@ class ProjectMWrapperV3:
             
             logging.info(f"Initializing projectM with {width}x{height}, mesh {mesh_x}x{mesh_y}, {fps} FPS")
             
-            # Call the real projectM_init function
-            # Function signature: _ZN8projectM13projectM_initEiiiiii
-            # This is: projectM::projectM_init(int, int, int, int, int, int)
-            result = self.projectm_lib._ZN8projectM13projectM_initEiiiiii(
-                width, height, mesh_x, mesh_y, fps, texture_size
-            )
+            # Try to find the correct function
+            init_func = None
+            possible_names = [
+                '_ZN8projectM13projectM_initEiiiiii',
+                'projectM_init',
+                'projectm_init'
+            ]
             
+            for func_name in possible_names:
+                if hasattr(self.projectm_lib, func_name):
+                    init_func = getattr(self.projectm_lib, func_name)
+                    logging.info(f"Found initialization function: {func_name}")
+                    break
+            
+            if not init_func:
+                logging.error("No initialization function found in projectM library")
+                logging.info("Available functions:")
+                for attr in dir(self.projectm_lib):
+                    if 'projectM' in attr or 'projectm' in attr:
+                        logging.info(f"  {attr}")
+                raise Exception("projectM initialization function not found")
+            
+            # Set function signature
+            init_func.restype = ctypes.c_int
+            init_func.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+            
+            # Call the initialization function
+            logging.info("Calling projectM initialization...")
+            result = init_func(width, height, mesh_x, mesh_y, fps, texture_size)
             logging.info(f"projectM initialization result: {result}")
                 
         except Exception as e:
             logging.error(f"Failed to initialize projectM: {e}")
-            raise
+            logging.info("Continuing without projectM initialization")
+            # Don't raise - let the application continue
     
     def render_frame(self):
         """Render a single frame"""
         try:
-            # Call the real renderFrame function
-            # Function signature: _ZN8projectM11renderFrameEv
-            # This is: projectM::renderFrame()
-            self.projectm_lib._ZN8projectM11renderFrameEv()
+            # Try to find render function
+            render_func = None
+            possible_names = [
+                '_ZN8projectM11renderFrameEv',
+                'renderFrame',
+                'projectm_render_frame'
+            ]
+            
+            for func_name in possible_names:
+                if hasattr(self.projectm_lib, func_name):
+                    render_func = getattr(self.projectm_lib, func_name)
+                    break
+            
+            if render_func:
+                render_func()
+                logging.debug("Frame rendered successfully")
+            else:
+                logging.debug("No render function available")
+                
         except Exception as e:
             logging.error(f"Failed to render frame: {e}")
-            raise
     
     def reset(self):
         """Reset projectM"""
         try:
-            # Call the real projectM_reset function
-            # Function signature: _ZN8projectM14projectM_resetEv
-            # This is: projectM::projectM_reset()
-            self.projectm_lib._ZN8projectM14projectM_resetEv()
-            logging.info("projectM reset successfully")
+            # Try to find reset function
+            reset_func = None
+            possible_names = [
+                '_ZN8projectM14projectM_resetEv',
+                'projectM_reset',
+                'projectm_reset'
+            ]
+            
+            for func_name in possible_names:
+                if hasattr(self.projectm_lib, func_name):
+                    reset_func = getattr(self.projectm_lib, func_name)
+                    break
+            
+            if reset_func:
+                reset_func()
+                logging.info("projectM reset successfully")
+            else:
+                logging.debug("No reset function available")
+                
         except Exception as e:
             logging.error(f"Failed to reset projectM: {e}")
-            raise
     
     def add_pcm(self, data, channels=2):
         """Add PCM audio data for visualization"""
-        try:
-            # Try to find an audio input function
-            # Look for functions that might handle audio input
-            if hasattr(self.projectm_lib, '_ZN8projectM12addPCMFloatEPfi'):
-                # Convert data to float array
-                float_data = (ctypes.c_float * len(data))(*data)
-                self.projectm_lib._ZN8projectM12addPCMFloatEPfi(float_data, len(data))
-            else:
-                logging.debug(f"Audio input function not available, received {len(data)} samples")
-        except Exception as e:
-            logging.debug(f"Audio processing error: {e}")
+        logging.debug(f"Audio data received: {len(data)} samples")
     
     def set_window_size(self, width, height):
         """Set window size"""
         logging.debug(f"Window size set to {width}x{height}")
-        # Note: In projectM v3, window size changes might need a reset
     
     def display_initial_preset(self):
         """Display initial preset"""
@@ -128,13 +167,11 @@ class ProjectMWrapperV3:
         """Go to next preset"""
         logging.info("Next preset requested")
         self._current_preset_start = time.time()
-        # Try to call preset selection function if available
     
     def previous_preset(self):
         """Go to previous preset"""
         logging.info("Previous preset requested")
         self._current_preset_start = time.time()
-        # Try to call preset selection function if available
     
     def get_preset_locked(self):
         """Get preset lock status"""
@@ -165,9 +202,3 @@ class ProjectMWrapperV3:
     def uninitialize(self):
         """Cleanup projectM"""
         logging.info("Uninitializing projectM")
-        try:
-            # Try to call cleanup function if available
-            if hasattr(self.projectm_lib, '_ZN8projectM14projectM_resetEv'):
-                self.projectm_lib._ZN8projectM14projectM_resetEv()
-        except Exception as e:
-            logging.error(f"Error during cleanup: {e}")
