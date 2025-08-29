@@ -17,9 +17,9 @@ services:
       - XDG_RUNTIME_DIR=/run/user/1000
       - DISPLAY=:0
     volumes:
-      - /run/user/1000/pulse:/run/user/1000/pulse:rw
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ./conf:/app/conf
+      - ./conf:/app/conf:ro  # Read-only mount for configuration
+      - /run/user/1000/pulse:/run/user/1000/pulse:rw  # PulseAudio socket
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X11 socket for graphics
     network_mode: host
     labels:
       - "traefik.enable=false"
