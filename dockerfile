@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-# Install minimal system dependencies
+# Install ALL dependencies in one layer (including build tools)
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     pulseaudio-utils \
@@ -18,7 +18,26 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxss1 \
     libxtst6 \
+    git \
+    cmake \
+    build-essential \
+    pkg-config \
+    libglm-dev \
+    libgl1-mesa-dev \
+    libegl1-mesa-dev \
+    libfreetype6-dev \
+    libfontconfig1-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Build projectM from source (simplified approach)
+WORKDIR /tmp
+RUN git clone --depth 1 --branch v4.1.0 https://github.com/projectM-visualizer/projectM.git && \
+    cd projectM && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig
 
 # Set working directory
 WORKDIR /app
@@ -43,6 +62,9 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
+
+# Verify projectM library is installed
+RUN ls -la /usr/local/lib/libprojectM* && echo "projectM library found!"
 
 # Expose ports for web interface (if any)
 EXPOSE 8080
