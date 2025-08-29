@@ -27,11 +27,11 @@ RUN . venv/bin/activate && pip install -r requirements.txt
 # Copy the application code
 COPY . .
 
-# Make main.py executable
-RUN chmod +x main.py
+# Make projectMAR.py executable
+RUN chmod +x projectMAR.py
 
 # Expose ports for web interface (if any)
 EXPOSE 8080
 
-# Set the command to run the application
-CMD ["./venv/bin/python", "main.py"]
+# Set the command to run the application with the correct entry point
+CMD ["./venv/bin/python", "projectMAR.py"]
