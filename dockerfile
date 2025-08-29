@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     g++ \
     libprojectm-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -36,11 +37,24 @@ RUN . venv/bin/activate && pip install -r requirements.txt
 # Copy the wrapper source file FIRST
 COPY projectm_wrapper.cpp /tmp/
 
-# Build projectM wrapper
+# Build projectM wrapper with better error handling
 RUN echo "Building projectM wrapper..." && \
     cd /tmp && \
-    g++ -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 && \
-    echo "Wrapper built successfully"
+    echo "Current directory: $(pwd)" && \
+    echo "Files in /tmp: $(ls -la)" && \
+    echo "Checking projectM library..." && \
+    pkg-config --libs projectM || echo "pkg-config failed, trying direct linking" && \
+    echo "Compiling wrapper..." && \
+    g++ -v -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 2>&1 || \
+    (echo "First attempt failed, trying with different flags..." && \
+     g++ -v -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 -I/usr/include/projectM 2>&1) || \
+    (echo "Second attempt failed, trying without std flag..." && \
+     g++ -v -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM 2>&1) || \
+    (echo "All compilation attempts failed. Checking what's available:" && \
+     echo "projectM headers:" && find /usr -name "projectM.hpp" 2>/dev/null && \
+     echo "projectM libraries:" && find /usr -name "*projectM*" 2>/dev/null && \
+     echo "pkg-config output:" && pkg-config --cflags --libs projectM 2>&1 || echo "pkg-config not available" && \
+     exit 1)
 
 # Copy the rest of the application code
 COPY . .
