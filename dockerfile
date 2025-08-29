@@ -22,12 +22,6 @@ RUN apt-get update && apt-get install -y \
     libprojectm-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Build projectM wrapper FIRST (before copying app code)
-RUN echo "Building projectM wrapper..." && \
-    cd /tmp && \
-    g++ -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 && \
-    echo "Wrapper built successfully"
-
 # Set working directory
 WORKDIR /app
 
@@ -39,7 +33,16 @@ RUN python3 -m venv venv
 RUN . venv/bin/activate && pip install --upgrade pip
 RUN . venv/bin/activate && pip install -r requirements.txt
 
-# Copy the application code
+# Copy the wrapper source file FIRST
+COPY projectm_wrapper.cpp /tmp/
+
+# Build projectM wrapper
+RUN echo "Building projectM wrapper..." && \
+    cd /tmp && \
+    g++ -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 && \
+    echo "Wrapper built successfully"
+
+# Copy the rest of the application code
 COPY . .
 
 # Make projectMAR.py executable
