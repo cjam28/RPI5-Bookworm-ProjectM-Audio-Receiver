@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  projectm-audio-receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: projectm-audio-receiver
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/snd:/dev/snd
+      - /dev/vchiq:/dev/vchiq
+    environment:
+      - PULSE_SERVER=unix:/run/user/1000/pulse/native
+      - XDG_RUNTIME_DIR=/run/user/1000
+      - DISPLAY=:0
+    volumes:
+      - /run/user/1000/pulse:/run/user/1000/pulse:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./conf:/app/conf
+    network_mode: host
+    labels:
+      - "traefik.enable=false"
