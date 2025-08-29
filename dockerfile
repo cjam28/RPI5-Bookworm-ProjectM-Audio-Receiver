@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-# Install only runtime dependencies (no build tools)
+# Install ALL dependencies including build tools
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     pulseaudio-utils \
@@ -18,7 +18,15 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxss1 \
     libxtst6 \
+    g++ \
+    libprojectm-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Build projectM wrapper FIRST (before copying app code)
+RUN echo "Building projectM wrapper..." && \
+    cd /tmp && \
+    g++ -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 && \
+    echo "Wrapper built successfully"
 
 # Set working directory
 WORKDIR /app
@@ -49,26 +57,3 @@ EXPOSE 8080
 
 # Set the command to run the application with the correct entry point
 CMD ["./venv/bin/python", "projectMAR.py"]
-
-# Build projectM wrapper
-RUN echo "Building projectM wrapper..." && \
-    cd /tmp && \
-    echo '#include <projectM.hpp>' > projectm_wrapper.cpp && \
-    echo '#include <cstring>' >> projectm_wrapper.cpp && \
-    echo '' >> projectm_wrapper.cpp && \
-    echo 'extern "C" {' >> projectm_wrapper.cpp && \
-    echo '    static projectM* g_projectm = nullptr;' >> projectm_wrapper.cpp && \
-    echo '    int projectm_init(int width, int height, int mesh_x, int mesh_y, int fps, int texture_size) {' >> projectm_wrapper.cpp && \
-    echo '        try {' >> projectm_wrapper.cpp && \
-    echo '            if (g_projectm) delete g_projectm;' >> projectm_wrapper.cpp && \
-    echo '            g_projectm = new projectM();' >> projectm_wrapper.cpp && \
-    echo '            g_projectm->projectM_init(width, height, mesh_x, mesh_y, fps, texture_size);' >> projectm_wrapper.cpp && \
-    echo '            return 0;' >> projectm_wrapper.cpp && \
-    echo '        } catch (...) { return -1; }' >> projectm_wrapper.cpp && \
-    echo '    }' >> projectm_wrapper.cpp && \
-    echo '    void projectm_render_frame() { if (g_projectm) g_projectm->renderFrame(); }' >> projectm_wrapper.cpp && \
-    echo '    void projectm_reset() { if (g_projectm) g_projectm->projectM_reset(); }' >> projectm_wrapper.cpp && \
-    echo '    void projectm_cleanup() { if (g_projectm) { delete g_projectm; g_projectm = nullptr; } }' >> projectm_wrapper.cpp && \
-    echo '}' >> projectm_wrapper.cpp && \
-    g++ -shared -fPIC -o /usr/local/lib/libprojectm_wrapper.so projectm_wrapper.cpp -lprojectM -std=c++11 && \
-    echo "Wrapper built successfully"
