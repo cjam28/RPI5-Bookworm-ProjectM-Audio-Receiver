@@ -20,7 +20,7 @@ services:
       - /run/user/1000/pulse:/run/user/1000/pulse:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /usr/lib:/usr/lib:ro  # Mount host libraries
-      - /usr/local/lib:/usr/local/lib:rw  # Mount local lib for symlink
+      - /usr/local/lib:/usr/local/lib:rw  # Mount local lib for symlinks
       - /boot:/boot:ro  # Mount boot for OS detection
     network_mode: host
     labels:
