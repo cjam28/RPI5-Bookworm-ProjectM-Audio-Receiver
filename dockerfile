@@ -1,6 +1,36 @@
+# Stage 1: Build projectM
+FROM debian:bookworm-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    cmake \
+    build-essential \
+    pkg-config \
+    libglm-dev \
+    libgl1-mesa-dev \
+    libegl1-mesa-dev \
+    libfreetype6-dev \
+    libfontconfig1-dev \
+    libglfw3-dev \
+    libglew-dev \
+    libassimp-dev \
+    libboost-all-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build projectM
+WORKDIR /tmp
+RUN git clone --depth 1 https://github.com/projectM-visualizer/projectM.git && \
+    cd projectM && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_NATIVE_GL=ON && \
+    make -j$(nproc) && \
+    make install
+
+# Stage 2: Runtime container
 FROM python:3.11-slim-bookworm
 
-# Install ALL system dependencies in one layer
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     pulseaudio \
     pulseaudio-utils \
@@ -18,20 +48,12 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxss1 \
     libxtst6 \
-    git \
-    cmake \
-    build-essential \
-    pkg-config \
-    libglm-dev \
-    libgl1-mesa-dev \
-    libegl1-mesa-dev \
-    libfreetype6-dev \
-    libfontconfig1-dev \
-    libglfw3-dev \
-    libglew-dev \
-    libassimp-dev \
-    libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy projectM libraries from builder stage
+COPY --from=builder /usr/local/lib/libprojectM* /usr/local/lib/
+COPY --from=builder /usr/local/include/projectM /usr/local/include/
+RUN ldconfig
 
 # Set working directory
 WORKDIR /app
@@ -56,34 +78,6 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
-
-# Try to install projectM from Debian packages first
-RUN apt-get update && apt-get install -y \
-    libprojectm-dev \
-    libprojectm-data \
-    || echo "projectM packages not available, will try alternative approach"
-
-# If Debian packages failed, try building from source with better error handling
-RUN if [ ! -f /usr/lib/*/libprojectM* ] && [ ! -f /usr/local/lib/libprojectM* ]; then \
-        echo "Building projectM from source..." && \
-        cd /tmp && \
-        git clone --depth 1 https://github.com/projectM-visualizer/projectM.git && \
-        cd projectM && \
-        mkdir build && cd build && \
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_NATIVE_GL=ON && \
-        make -j$(nproc) && \
-        make install && \
-        ldconfig && \
-        echo "projectM built successfully"; \
-    else \
-        echo "projectM already available from packages"; \
-    fi
-
-# Verify projectM library is installed
-RUN echo "Checking for projectM libraries:" && \
-    find /usr -name "*libprojectM*" 2>/dev/null || \
-    find /usr/local -name "*libprojectM*" 2>/dev/null || \
-    echo "No projectM libraries found - this may cause runtime errors"
 
 # Expose ports for web interface (if any)
 EXPOSE 8080
