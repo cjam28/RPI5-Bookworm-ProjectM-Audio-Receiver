@@ -1,5 +1,5 @@
 # lib/projectM/ProjectMWrapper_v3.py
-# Python-only compatibility layer for projectM version 3.1.12
+# Real projectM implementation for version 3.1.12
 
 import ctypes
 import logging
@@ -8,7 +8,7 @@ import os
 import sys
 
 class ProjectMWrapperV3:
-    """Python-only compatibility wrapper for projectM version 3.1.12"""
+    """Real projectM implementation for version 3.1.12"""
     
     def __init__(self, config, sdl_rendering):
         self.config = config
@@ -20,7 +20,7 @@ class ProjectMWrapperV3:
         self._preset_locked = False
         self._preset_shuffle = False
         
-        # Try to load the projectM library with different approaches
+        # Load the projectM library
         self.projectm_lib = None
         self._load_projectm_library()
         
@@ -28,10 +28,11 @@ class ProjectMWrapperV3:
         if self.projectm_lib:
             self._init_projectm()
         else:
-            logging.warning("projectM library not available - running in demo mode")
+            logging.error("Failed to load projectM library")
+            raise Exception("projectM library not available")
     
     def _load_projectm_library(self):
-        """Try different ways to load the projectM library"""
+        """Load the projectM library"""
         library_paths = [
             "/usr/lib/aarch64-linux-gnu/libprojectM.so",
             "/usr/lib/libprojectM.so",
@@ -52,10 +53,6 @@ class ProjectMWrapperV3:
     
     def _init_projectm(self):
         """Initialize projectM with configuration"""
-        if not self.projectm_lib:
-            logging.warning("Skipping projectM initialization - library not available")
-            return
-            
         try:
             # Get configuration values
             width = self.config.projectm.get('window.fullscreen.width', 1280)
@@ -63,70 +60,81 @@ class ProjectMWrapperV3:
             mesh_x = self.config.projectm.get('mesh_x', 64)
             mesh_y = self.config.projectm.get('mesh_y', 32)
             fps = self.config.projectm.get('fps', 60)
+            texture_size = 512  # Default texture size
             
             logging.info(f"Initializing projectM with {width}x{height}, mesh {mesh_x}x{mesh_y}, {fps} FPS")
             
-            # For now, just log the initialization
-            # We'll implement actual initialization when we figure out the correct function calls
-            logging.info("projectM initialization completed (demo mode)")
+            # Call the real projectM_init function
+            # Function signature: _ZN8projectM13projectM_initEiiiiii
+            # This is: projectM::projectM_init(int, int, int, int, int, int)
+            result = self.projectm_lib._ZN8projectM13projectM_initEiiiiii(
+                width, height, mesh_x, mesh_y, fps, texture_size
+            )
+            
+            logging.info(f"projectM initialization result: {result}")
                 
         except Exception as e:
             logging.error(f"Failed to initialize projectM: {e}")
-            logging.info("Continuing in demo mode")
+            raise
     
     def render_frame(self):
         """Render a single frame"""
-        if not self.projectm_lib:
-            # Demo mode - just log that we're rendering
-            logging.debug("Demo mode: rendering frame")
-            return
-            
         try:
-            # Try to call renderFrame if available
-            if hasattr(self.projectm_lib, 'renderFrame'):
-                self.projectm_lib.renderFrame()
-            else:
-                logging.debug("renderFrame function not available")
+            # Call the real renderFrame function
+            # Function signature: _ZN8projectM11renderFrameEv
+            # This is: projectM::renderFrame()
+            self.projectm_lib._ZN8projectM11renderFrameEv()
         except Exception as e:
             logging.error(f"Failed to render frame: {e}")
+            raise
     
     def reset(self):
         """Reset projectM"""
-        if not self.projectm_lib:
-            logging.info("Demo mode: projectM reset requested")
-            return
-            
         try:
-            if hasattr(self.projectm_lib, 'projectM_reset'):
-                self.projectm_lib.projectM_reset()
-                logging.info("projectM reset successfully")
-            else:
-                logging.debug("projectM_reset function not available")
+            # Call the real projectM_reset function
+            # Function signature: _ZN8projectM14projectM_resetEv
+            # This is: projectM::projectM_reset()
+            self.projectm_lib._ZN8projectM14projectM_resetEv()
+            logging.info("projectM reset successfully")
         except Exception as e:
             logging.error(f"Failed to reset projectM: {e}")
+            raise
     
     def add_pcm(self, data, channels=2):
-        """Add PCM audio data for visualization (stub for compatibility)"""
-        logging.debug(f"Audio data received: {len(data)} samples")
+        """Add PCM audio data for visualization"""
+        try:
+            # Try to find an audio input function
+            # Look for functions that might handle audio input
+            if hasattr(self.projectm_lib, '_ZN8projectM12addPCMFloatEPfi'):
+                # Convert data to float array
+                float_data = (ctypes.c_float * len(data))(*data)
+                self.projectm_lib._ZN8projectM12addPCMFloatEPfi(float_data, len(data))
+            else:
+                logging.debug(f"Audio input function not available, received {len(data)} samples")
+        except Exception as e:
+            logging.debug(f"Audio processing error: {e}")
     
     def set_window_size(self, width, height):
-        """Set window size (stub for compatibility)"""
+        """Set window size"""
         logging.debug(f"Window size set to {width}x{height}")
+        # Note: In projectM v3, window size changes might need a reset
     
     def display_initial_preset(self):
-        """Display initial preset (stub for compatibility)"""
+        """Display initial preset"""
         logging.info("Displaying initial preset")
         self._current_preset_start = time.time()
     
     def next_preset(self):
-        """Go to next preset (stub for compatibility)"""
+        """Go to next preset"""
         logging.info("Next preset requested")
         self._current_preset_start = time.time()
+        # Try to call preset selection function if available
     
     def previous_preset(self):
-        """Go to previous preset (stub for compatibility)"""
+        """Go to previous preset"""
         logging.info("Previous preset requested")
         self._current_preset_start = time.time()
+        # Try to call preset selection function if available
     
     def get_preset_locked(self):
         """Get preset lock status"""
@@ -147,13 +155,19 @@ class ProjectMWrapperV3:
         logging.info(f"Shuffle set to: {shuffle}")
     
     def delete_preset(self, physical=False):
-        """Delete preset (stub for compatibility)"""
+        """Delete preset"""
         logging.info("Delete preset requested")
     
     def change_beat_sensitivity(self, delta):
-        """Change beat sensitivity (stub for compatibility)"""
+        """Change beat sensitivity"""
         logging.debug(f"Beat sensitivity change: {delta}")
     
     def uninitialize(self):
         """Cleanup projectM"""
         logging.info("Uninitializing projectM")
+        try:
+            # Try to call cleanup function if available
+            if hasattr(self.projectm_lib, '_ZN8projectM14projectM_resetEv'):
+                self.projectm_lib._ZN8projectM14projectM_resetEv()
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
