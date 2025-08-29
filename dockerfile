@@ -44,6 +44,10 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
 
+# Create symlink for projectM library compatibility
+RUN mkdir -p /usr/local/lib && \
+    ln -sf /usr/lib/aarch64-linux-gnu/libprojectM.so /usr/local/lib/libprojectM-4.so
+
 # Expose ports for web interface (if any)
 EXPOSE 8080
 
