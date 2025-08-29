@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxss1 \
     libxtst6 \
+    libprojectm-dev \
+    libprojectm-data \
+    libprojectm4 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -44,8 +47,11 @@ COPY conf/projectMAR.conf /app/conf/projectMAR.conf
 # Create a symlink to ensure the lib directory can find the conf directory
 RUN ln -sf /app/conf /app/lib/conf
 
+# Verify projectM library is installed
+RUN ls -la /usr/lib/*/libprojectM* || echo "Checking for projectM libraries..."
+
 # Expose ports for web interface (if any)
 EXPOSE 8080
 
 # Set the command to run the application with the correct entry point
-CMD ["./venv/bin/python", "projectMAR.py"]
+CMD ["./venv/bin/activate", "&&", "./venv/bin/python", "projectMAR.py"]
