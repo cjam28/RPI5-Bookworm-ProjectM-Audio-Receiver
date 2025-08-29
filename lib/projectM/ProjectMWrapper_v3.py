@@ -19,26 +19,26 @@ class ProjectMWrapperV3:
         self._preset_locked = False
         self._preset_shuffle = False
         
-        # Load the projectM library
+        # Load the projectM wrapper library
         try:
-            self.projectm_lib = ctypes.CDLL("/usr/lib/aarch64-linux-gnu/libprojectM.so")
-            logging.info("Successfully loaded projectM v3.1.12 library")
+            self.projectm_lib = ctypes.CDLL("/usr/local/lib/libprojectm_wrapper.so")
+            logging.info("Successfully loaded projectM wrapper library")
         except Exception as e:
-            logging.error(f"Failed to load projectM library: {e}")
+            logging.error(f"Failed to load projectM wrapper library: {e}")
             raise
         
-        # Set up function signatures for version 3.1.12
+        # Set up function signatures for the wrapper
         self._setup_functions()
         
         # Initialize projectM
         self._init_projectm()
     
     def _setup_functions(self):
-        """Set up function signatures for version 3.1.12"""
+        """Set up function signatures for the wrapper"""
         try:
-            # Main initialization function (different name in v3)
-            self.projectm_lib.projectM_init.restype = ctypes.c_int
-            self.projectm_lib.projectM_init.argtypes = [
+            # Main initialization function
+            self.projectm_lib.projectm_init.restype = ctypes.c_int
+            self.projectm_lib.projectm_init.argtypes = [
                 ctypes.c_int,  # width
                 ctypes.c_int,  # height
                 ctypes.c_int,  # mesh_x
@@ -48,26 +48,18 @@ class ProjectMWrapperV3:
             ]
             
             # Reset function
-            self.projectm_lib.projectM_reset.restype = None
-            self.projectm_lib.projectM_reset.argtypes = []
+            self.projectm_lib.projectm_reset.restype = None
+            self.projectm_lib.projectm_reset.argtypes = []
             
             # Render frame function
-            self.projectm_lib.renderFrame.restype = None
-            self.projectm_lib.renderFrame.argtypes = []
+            self.projectm_lib.projectm_render_frame.restype = None
+            self.projectm_lib.projectm_render_frame.argtypes = []
             
-            # Get mesh size function
-            self.projectm_lib.getMeshSize.restype = None
-            self.projectm_lib.getMeshSize.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
+            # Cleanup function
+            self.projectm_lib.projectm_cleanup.restype = None
+            self.projectm_lib.projectm_cleanup.argtypes = []
             
-            # Audio processing function (if available)
-            try:
-                self.projectm_lib.addPCMFloat.restype = None
-                self.projectm_lib.addPCMFloat.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int]
-                logging.info("Audio processing function available")
-            except:
-                logging.warning("Audio processing function not available")
-            
-            logging.info("Successfully set up projectM v3.1.12 function signatures")
+            logging.info("Successfully set up projectM wrapper function signatures")
             
         except Exception as e:
             logging.error(f"Failed to set up function signatures: {e}")
@@ -85,7 +77,7 @@ class ProjectMWrapperV3:
             texture_size = 512  # Default texture size
             
             # Initialize projectM
-            result = self.projectm_lib.projectM_init(
+            result = self.projectm_lib.projectm_init(
                 width, height, mesh_x, mesh_y, fps, texture_size
             )
             
@@ -102,7 +94,7 @@ class ProjectMWrapperV3:
     def render_frame(self):
         """Render a single frame"""
         try:
-            self.projectm_lib.renderFrame()
+            self.projectm_lib.projectm_render_frame()
         except Exception as e:
             logging.error(f"Failed to render frame: {e}")
             raise
@@ -110,21 +102,15 @@ class ProjectMWrapperV3:
     def reset(self):
         """Reset projectM"""
         try:
-            self.projectm_lib.projectM_reset()
+            self.projectm_lib.projectm_reset()
             logging.info("projectM reset successfully")
         except Exception as e:
             logging.error(f"Failed to reset projectM: {e}")
             raise
     
     def add_pcm(self, data, channels=2):
-        """Add PCM audio data for visualization"""
-        try:
-            if hasattr(self.projectm_lib, 'addPCMFloat'):
-                # Convert data to float array
-                float_data = (ctypes.c_float * len(data))(*data)
-                self.projectm_lib.addPCMFloat(float_data, len(data))
-        except Exception as e:
-            logging.debug(f"Audio processing not available: {e}")
+        """Add PCM audio data for visualization (stub for compatibility)"""
+        logging.debug(f"Audio data received: {len(data)} samples")
     
     def set_window_size(self, width, height):
         """Set window size (stub for compatibility)"""
@@ -174,3 +160,7 @@ class ProjectMWrapperV3:
     def uninitialize(self):
         """Cleanup projectM"""
         logging.info("Uninitializing projectM")
+        try:
+            self.projectm_lib.projectm_cleanup()
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
