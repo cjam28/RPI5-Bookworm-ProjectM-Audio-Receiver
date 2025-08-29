@@ -1,15 +1,15 @@
-# Use existing projectM base image
-FROM ghcr.io/projectm-visualizer/projectm:latest
+FROM python:3.11-slim-bookworm
 
-# Install Python and other dependencies
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
     pulseaudio \
     pulseaudio-utils \
     libasound2-dev \
     libpulse-dev \
+    python3-pip \
+    python3-venv \
+    libgl1-mesa-glx \
+    libglu1-mesa \
     libsdl2-2.0-0 \
     libsdl2-dev \
     libx11-6 \
